@@ -1,0 +1,42 @@
+name: Sync release README
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/sync-release-readme.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update release ZIP README
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/release /tmp/unpack
+          tag=$(gh release view --json tagName -q .tagName)
+          gh release download "$tag" --pattern '*.zip' --dir /tmp/release
+          zipfile=$(find /tmp/release -maxdepth 1 -type f -name '*.zip' | head -n1)
+          unzip -q "$zipfile" -d /tmp/unpack
+          pkg_readme=$(find /tmp/unpack -type f -iname 'README.md' -printf '%d %p\n' | sort -n | head -n1 | cut -d' ' -f2-)
+          cp README.md "$pkg_readme"
+          cd /tmp/unpack
+          zip -qr /tmp/new.zip .
+          asset_name=$(basename "$zipfile")
+          mv /tmp/new.zip "/tmp/$asset_name"
+          cd "$GITHUB_WORKSPACE"
+          gh release upload "$tag" "/tmp/$asset_name" --clobber
+          if [ -f "downloads/$asset_name" ]; then
+            cp "/tmp/$asset_name" "downloads/$asset_name"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add "downloads/$asset_name"
+            git commit -m "Sync release ZIP README" || true
+            git push
+          fi
