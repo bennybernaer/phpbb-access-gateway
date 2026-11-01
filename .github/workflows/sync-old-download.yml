@@ -1,0 +1,28 @@
+name: Sync v1.0.0 release ZIP to downloads
+
+on:
+  push:
+    paths:
+      - '.github/workflows/sync-old-download.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy v1.0.0 release ZIP into downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p downloads /tmp/release
+          gh release download v1.0.0 --pattern '*.zip' --dir /tmp/release
+          cp /tmp/release/*.zip downloads/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/
+          git commit -m "Add v1.0.0 release ZIP to downloads" || true
+          git push
