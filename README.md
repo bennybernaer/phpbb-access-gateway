@@ -12,7 +12,7 @@ denied. Child forum permissions stored in the database are not modified.
 
 Download the latest stable release from:
 
-https://github.com/bennybernaer/accessgateway/releases/tag/v1.0.1
+https://github.com/bennybernaer/phpbb-access-gateway/releases/tag/v1.0.1
 
 The ready-to-install package is:
 
